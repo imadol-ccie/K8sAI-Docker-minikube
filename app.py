@@ -57,6 +57,21 @@ def apply_yaml(yaml_content: str, filename: str):
             
                             
 
+# --- Namespace Helper ---
+def generate_namespace_yaml(name: str):
+    ns = {
+        "apiVersion": "v1",
+        "kind": "Namespace",
+        "metadata": {"name": name},
+    }
+    return yaml.dump(ns, default_flow_style=False)
+
+def ensure_namespace(namespace: str) -> str:
+    if not namespace or namespace == "default":
+        return ""
+    yaml_content = generate_namespace_yaml(namespace)
+    return apply_yaml(yaml_content, f"{namespace}-namespace.yaml")
+
 # --- Service Helper ---
 def generate_service_yaml(name: str, namespace: str = "default", port: int = 80, target_port: int = 80, service_type: str = "ClusterIP"):
     service = {
@@ -80,13 +95,14 @@ def generate_service_yaml(name: str, namespace: str = "default", port: int = 80,
 
 @tool
 def create_deployment(tool_input: str) -> str:
-    """Create a Kubernetes deployment. Input format example: name: web-app, image: httpd, replicas: 2"""
+    """Create a Kubernetes deployment. Always ask the user for the namespace before calling this tool; if they don't specify one, ask explicitly. If the namespace is not 'default', it will be created automatically. Input format example: name: web-app, image: httpd, replicas: 2, namespace: staging"""
     name = None
     image = None
     replicas = 1
+    namespace = "default"
 
     tool_input = tool_input.strip().strip("{}'\"")
-    
+
     # Try to parse key-value pairs
     try:
         parts = tool_input.split(",")
@@ -100,6 +116,8 @@ def create_deployment(tool_input: str) -> str:
                     image = v
                 elif k == "replicas":
                     replicas = int(v)
+                elif k == "namespace":
+                    namespace = v
     except Exception:
         pass
 
@@ -109,7 +127,7 @@ def create_deployment(tool_input: str) -> str:
         if len(parts) >= 2:
             name = parts[0].replace("name:", "").strip()
             image = parts[1].replace("image:", "").strip()
-            
+
             if len(parts) > 2:
                 try:
                     replicas_val = parts[2].replace("replicas:", "").strip()
@@ -120,17 +138,21 @@ def create_deployment(tool_input: str) -> str:
     if not name or not image:
         raise ValueError("Both 'name' and 'image' must be provided to create a deployment.")
 
-    yaml_content = generate_deployment_yaml(name, image, replicas)
-    return apply_yaml(yaml_content, f"{name}-deployment.yaml")
+    ns_result = ensure_namespace(namespace)
+
+    yaml_content = generate_deployment_yaml(name, image, replicas, namespace=namespace)
+    apply_result = apply_yaml(yaml_content, f"{name}-deployment.yaml")
+    return f"{ns_result}\n{apply_result}" if ns_result else apply_result
 
 
 @tool
 def create_service(tool_input: str) -> str:
-    """Create a Kubernetes service. Input format example: name: web-app, port: 80, type: ClusterIP"""
+    """Create a Kubernetes service. Always ask the user for the namespace before calling this tool; if they don't specify one, ask explicitly. If the namespace is not 'default', it will be created automatically. Input format example: name: web-app, port: 80, type: ClusterIP, namespace: staging"""
     name = None
     port = 80
     target_port = 80
     service_type = "ClusterIP"
+    namespace = "default"
 
     tool_input = tool_input.strip().strip("{}'\"")
 
@@ -148,21 +170,26 @@ def create_service(tool_input: str) -> str:
                     target_port = int(v)
                 elif k == "type":
                     service_type = v
+                elif k == "namespace":
+                    namespace = v
     except Exception:
         pass
-        
+
     if not name:
         raise ValueError("A 'name' must be provided to create a service.")
 
-    yaml_content = generate_service_yaml(name, port=port, target_port=target_port, service_type=service_type)
-    return apply_yaml(yaml_content, f"{name}-service.yaml")
+    ns_result = ensure_namespace(namespace)
+
+    yaml_content = generate_service_yaml(name, namespace=namespace, port=port, target_port=target_port, service_type=service_type)
+    apply_result = apply_yaml(yaml_content, f"{name}-service.yaml")
+    return f"{ns_result}\n{apply_result}" if ns_result else apply_result
 
 
 tools = [create_deployment, create_service]
 
 # Prompt
 prompt = ChatPromptTemplate.from_messages([
-    ("system", "You are a helpful assistant that creates Kubernetes deployments and services."),
+    ("system", "You are a helpful assistant that creates Kubernetes deployments and services. Before creating any deployment or service, first ask the user whether to deploy to the 'default' namespace or a different one. If they pick a different namespace, ask them for its exact name. The chosen namespace will be created automatically if it does not already exist. Never assume a namespace without asking."),
     MessagesPlaceholder(variable_name="chat_history"),
     ("human", "{input}"),
     MessagesPlaceholder(variable_name="agent_scratchpad"),

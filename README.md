@@ -6,6 +6,7 @@ A Python AI agent powered by Google Gemini that creates Kubernetes Deployments a
 
 - Create Kubernetes Deployments by describing what you want in plain English
 - Create Kubernetes Services (ClusterIP, NodePort, LoadBalancer)
+- Deploy into any namespace — the agent asks before creating, and auto-creates the namespace if it doesn't already exist
 - Automatically saves generated YAML manifests to the `k8s/` directory
 - Remembers conversation context across turns within a session
 
@@ -50,17 +51,18 @@ chmod +x ./run.sh
 The agent supports:
 - Creating Deployments: `create a deployment named <name> with <image> image and <n> replicas`
 - Creating Services: `create a service for <name> on port <port>`
+- Targeting a namespace: append `in <namespace>` (or answer when the agent asks). If the namespace doesn't exist, the agent generates and applies a `Namespace` manifest first.
 
 ### Example prompts
 
 ```
 💡 What should I do? create a deployment named web-app using nginx image with 3 replicas
 💡 What should I do? create a service for web-app on port 80
-💡 What should I do? create a deployment named api, image python:3.12-slim, replicas 2
+💡 What should I do? create a deployment named api, image python:3.12-slim, replicas 2 in staging
 💡 What should I do? exit
 ```
 
-Each successful apply writes a manifest to `./k8s/<name>-deployment.yaml` or `./k8s/<name>-service.yaml`.
+Each successful apply writes a manifest to `./k8s/<name>-deployment.yaml`, `./k8s/<name>-service.yaml`, or `./k8s/<namespace>-namespace.yaml`.
 
 ## How it Works
 
