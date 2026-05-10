@@ -6,6 +6,7 @@ from langchain_core.tools import tool, BaseTool
 from langchain_classic.agents import create_tool_calling_agent, AgentExecutor
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.messages import HumanMessage, AIMessage
 
 load_dotenv()
 
@@ -173,19 +174,23 @@ agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True, handle_pa
 
 if __name__ == "__main__":
     print("🤖 Kubernetes AI Agent Initialized")
-    
+
+    chat_history = []
 
     while True:
         try:
             user_input = input("\n💡 What should I do? (or 'exit'): ").strip()
             if user_input.lower() in ["exit", "quit"]:
                 break
-                
+
             result = agent_executor.invoke({
                 "input": user_input,
-                "chat_history": []
+                "chat_history": chat_history,
             })
-                                     
+
+            chat_history.append(HumanMessage(content=user_input))
+            chat_history.append(AIMessage(content=result["output"]))
+
             print("\nAgent Output:\n", result["output"])
                                                       
                                                       
