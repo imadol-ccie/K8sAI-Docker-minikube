@@ -14,7 +14,8 @@ llm = ChatGoogleGenerativeAI(
     model="gemini-2.5-flash",
     google_api_key=os.getenv("GOOGLE_API_KEY"),
     temperature=0.1,
-    max_tokens=2048
+    max_tokens=2048,
+    thinking_budget=0,
 )
 
 # --- Deployment Helpers ---
@@ -185,8 +186,7 @@ if __name__ == "__main__":
                 "chat_history": []
             })
                                      
-            #print("\nAgent Output:\n", result["output"])
-            print("\nAgent Output:\n", result)
+            print("\nAgent Output:\n", result["output"])
                                                       
                                                       
 

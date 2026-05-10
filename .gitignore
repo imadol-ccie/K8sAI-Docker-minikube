@@ -2,3 +2,4 @@
 kubeconfig.flat
 __pycache__/
 *.pyc
+k8s/
