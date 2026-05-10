@@ -1,0 +1,4 @@
+.env
+kubeconfig.flat
+__pycache__/
+*.pyc
