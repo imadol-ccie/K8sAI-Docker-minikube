@@ -20,7 +20,7 @@ A Python AI agent powered by Google Gemini that creates Kubernetes Deployments a
 
 ```bash
 # 1. Clone
-git clone https://github.com/balkanbgboy/k8s-ai-agent K8sAI-Docker-minikube
+git clone https://github.com/imadol-ccie/K8sAI-Docker-minikube
 cd K8sAI-Docker-minikube
 
 # 2. Create .env with your API key
@@ -100,4 +100,4 @@ docker run --rm -it \
 
 ## Contributors
 
-- balkanbgboy
+- imadol-ccie
